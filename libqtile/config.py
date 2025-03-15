@@ -108,6 +108,11 @@ class KeyChord:
         an integer value representing a keycode.
     submappings:
         A list of :class:`Key` or :class:`KeyChord` declarations to bind in this chord.
+    commands:
+        One or more :class:`LazyCall` objects to evaluate in sequence upon entering the key chord. Multiple
+        commands should be separated by commas.
+    escape_command:
+        A :class:`LazyCall` objects to evaluate upon exiting the key chord.
     mode:
         Boolean. Setting to ``True`` will result in the chord persisting until
         Escape is pressed. Setting to ``False`` (default) will exit the chord once
@@ -129,6 +134,8 @@ class KeyChord:
         modifiers: list[str],
         key: str | int,
         submappings: list[Key | KeyChord],
+        *commands: LazyCall,
+        escape_command: LazyCall | None = None,
         mode: bool | str = False,
         name: str = "",
         desc: str = "",
@@ -136,9 +143,12 @@ class KeyChord:
     ):
         self.modifiers = modifiers
         self.key = key
-
-        submappings.append(Key([], "Escape"))
+        if escape_command is None:
+            submappings.append(Key([], "Escape"))
+        else:
+            submappings.append(Key([], "Escape", escape_command))
         self.submappings = submappings
+        self.commands = commands
         self.mode = mode
         self.name = name
         self.desc = desc
@@ -329,12 +339,23 @@ class EzKeyChord(EzConfig, KeyChord):
         self,
         keydef: str,
         submappings: list[Key | KeyChord],
+        *commands: LazyCall,
+        escape_command: LazyCall | None = None,
         mode: bool | str = False,
         name: str = "",
         desc: str = "",
     ):
         modkeys, key = self.parse(keydef)
-        super().__init__(modkeys, key, submappings, mode, name, desc)
+        super().__init__(
+            modkeys,
+            key,
+            submappings,
+            *commands,
+            escape_command=escape_command,
+            mode=mode,
+            name=name,
+            desc=desc,
+        )
 
 
 class EzClick(EzConfig, Click):
